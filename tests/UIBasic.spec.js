@@ -23,7 +23,7 @@ await expect(page).toHaveTitle("Google")
 
 });
 
-test.only('Validate Negative Scenario  present on the Practice page',async ({browser})=>
+test('Validate Negative Scenario  present on the Practice page',async ({browser})=>
 {
 const context = await browser.newContext();
 const page = await context.newPage();
@@ -35,7 +35,23 @@ await page.locator('#form-submit').click();
     const emailValidation = await emailInput.evaluate(el => el.validationMessage);
     console.log(`Email Field Validation Message: ${emailValidation}`);
     expect(emailValidation).toBe("Please fill out this field.");
-
-
-
+    
 });
+
+test.only('Validate multiple element',async ({page})=>
+{
+
+await page.goto("https://naveenautomationlabs.com/opencart/index.php?route=account/login");
+await page.locator('#input-email').fill("dib@gmail.com");
+await page.locator('#input-password').fill("Rss@2020");
+// await page.locator('#email').fill("dibyendumondal87@gmail.com");
+await page.locator('[value="Login"]').click();
+await page.locator('li:nth-child(7) a:nth-child(1)').click();
+await page.waitForLoadState('networkidle');
+const allMobiles = await page.locator('.caption h4 a').allTextContents();
+console.log(allMobiles);
+
+
+   
+});
+
