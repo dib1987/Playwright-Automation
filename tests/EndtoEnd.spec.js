@@ -104,6 +104,31 @@ test.only('Regression Test', async ({ page }) => {
     } else {
         throw new Error(`Product "${productName}" not found.`);
     }
+
+   // Click on the Cart //
+   await page.locator("[routerlink*='cart']").click();
+    //await page.click(button.btn.btn-custom[routerlink="/dashboard/cart"]);
+
+    // Wait for the checkout button visible // 
+
+    // Wait for the Checkout button to be visible and enabled
+    const checkoutButton = page.locator("li.totalRow button[type='button']");
+    await expect(checkoutButton).toBeVisible();
+    await expect(checkoutButton).toBeEnabled();
+
+    // Click the Checkout button
+    await checkoutButton.click();
+
+    console.log('Checkout button clicked successfully!');
+    // Payment page validation //
+
+
+
+
+
+
+
+
 });
 
 
