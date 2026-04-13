@@ -1,137 +1,84 @@
 const { test, expect } = require('@playwright/test');
 
+// Credentials should be moved to environment variables or a .env file
+// e.g. process.env.TEST_EMAIL / process.env.TEST_PASSWORD
+const OPENCART_EMAIL    = process.env.OPENCART_EMAIL    || "dib@gmail.com";
+const OPENCART_PASSWORD = process.env.OPENCART_PASSWORD || "Rss@2020";
+const CLIENT_EMAIL      = process.env.CLIENT_EMAIL      || "dibyendumondal87@gmail.com";
+const CLIENT_PASSWORD   = process.env.CLIENT_PASSWORD   || "Rss@2020";
+
 test('End to End', async ({ page }) => {
 
     await page.goto("https://naveenautomationlabs.com/opencart/index.php?route=account/login");
-    await page.locator('#input-email').fill("dib@gmail.com");
-    await page.locator('#input-password').fill("Rss@2020");
-    // await page.locator('#email').fill("dibyendumondal87@gmail.com");
-    await page.locator('[value="Login"]').click();
-    await page.locator('li:nth-child(7) a:nth-child(1)').click();
-    await page.waitForLoadState('networkidle');
-    const allCameras = await page.locator('.caption h4 a').allTextContents();
-    console.log(allCameras);
-    // Define the mobile name you want to click
+    await page.locator('#input-email').fill(OPENCART_EMAIL);
+    await page.locator('#input-password').fill(OPENCART_PASSWORD);
+    await page.getByRole('button', { name: 'Login' }).click();
+
+    // Navigate to Cameras category
+    await page.getByRole('link', { name: 'Cameras' }).click();
+    await expect(page.getByRole('heading', { name: 'Cameras' })).toBeVisible();
+
     const targetCamera = "Nikon D300";
-    for (let i = 0; i < allCameras.length; i++) {
-        if (allCameras[i] === targetCamera) {
-            // Click the corresponding element
-            await page.locator(`.caption h4 a:has-text("${targetCamera}")`).click();
-            console.log(`Clicked on ${targetCamera}`);
-            break; // Stop once found and clicked
-        }
-    }
+    await page.locator('.caption h4 a').filter({ hasText: targetCamera }).click();
+    await expect(page.getByRole('heading', { name: targetCamera })).toBeVisible();
+
     await page.locator('#button-cart').click();
 
-
-
     await page.locator('#cart-total').click();
-    await page.locator('strong:has(i.fa.fa-share)').click();
-    // Verify Total Price 
+    await page.getByRole('link', { name: /checkout/i }).click();
 
-    const quantity = await page.locator('input[name^="quantity"]').inputValue();
-    const unitPriceText = await page.locator('#content > form > div > table > tbody > tr > td:nth-child(5)').textContent();
+    const quantity        = await page.locator('input[name^="quantity"]').inputValue();
+    const unitPriceText   = await page.getByRole('cell', { name: /\$/ }).nth(0).textContent();
+    const totalPriceText  = await page.getByRole('cell', { name: /\$/ }).nth(1).textContent();
 
-    console.log(`Unit Price: ${unitPriceText}`);
+    const unitPrice            = parseFloat(unitPriceText.replace(/[$,]/g, '').trim());
+    const expectedTotalPrice   = parseFloat(quantity) * unitPrice;
+    const displayedTotalPrice  = parseFloat(totalPriceText.replace(/[$,]/g, '').trim());
 
-    const totalPriceText = await page.locator('#content > form > div > table > tbody > tr > td:nth-child(6)').textContent();
-
-    console.log(`Total  Price: ${totalPriceText}`);
-
-    // Convert values to numbers
-    const unitPrice = parseFloat(unitPriceText.replace('$', '').trim());
-
-    const expectedTotalPrice = parseFloat(quantity) * unitPrice;
-
-
-
-
-    console.log(`Expected Total Price: ${expectedTotalPrice}`);
-
-
-
-    const displayedTotalPrice = parseFloat(totalPriceText.replace(/[$,]/g, ''));
-
-
-
-
-
-
-    console.log(`Displayed Total Price: ${displayedTotalPrice}`);
-
-
-    // Validate the total price
-    if (expectedTotalPrice === displayedTotalPrice) {
-        console.log("✅ Total price is correct.");
-    } else {
-        console.log(`❌ Total price is incorrect. Expected: $${expectedTotalPrice}, Displayed: $${displayedTotalPrice}`);
-    }
-
+    expect(displayedTotalPrice).toBeCloseTo(expectedTotalPrice, 2);
 });
 
 
 test('Regression Test', async ({ page }) => {
 
     await page.goto("https://rahulshettyacademy.com/client");
-    await page.locator('#userEmail').fill("dibyendumondal87@gmail.com");
-    await page.locator('#userPassword').fill("Rss@2020");
-    // await page.locator('#email').fill("dibyendumondal87@gmail.com");
-    await page.locator('[value="Login"]').click();
-    await page.waitForLoadState('networkidle');
-    // Find all product titles
-    const productElements = page.locator('.card-body h5 b');
-    const allProducts = await productElements.allTextContents();
+    await page.locator('#userEmail').fill(CLIENT_EMAIL);
+    await page.locator('#userPassword').fill(CLIENT_PASSWORD);
+    await page.getByRole('button', { name: 'Login' }).click();
 
-    console.log(allProducts);
-    
-    // Define the product to select
-    const productName = 'ZARA COAT 3'; // Change dynamically if needed
+    // Wait for product grid to load rather than relying on networkidle
+    await expect(page.locator('.card-body').first()).toBeVisible();
 
-    // Find the index of the required product
-    const productIndex = allProducts.findIndex(title => title.includes(productName));
+    const productName = 'ZARA COAT 3';
 
-    if (productIndex !== -1) {
-        // Select the corresponding "Add To Cart" button and click it
-        const addToCartButtons = page.locator('.card-body button:has-text("Add To Cart")');
-        await addToCartButtons.nth(productIndex).click(); // Click on the correct button
-        console.log(`Added "${productName}" to the cart.`);
-    } else {
-        throw new Error(`Product "${productName}" not found.`);
-    }
+    await page.locator('.card-body')
+        .filter({ hasText: productName })
+        .getByRole('button', { name: 'Add To Cart' })
+        .click();
 
-   // Click on the Cart //
-   await page.locator("[routerlink*='cart']").click();
-    //await page.click(button.btn.btn-custom[routerlink="/dashboard/cart"]);
+    await page.locator("[routerlink*='cart']").click();
 
-    // Wait for the checkout button visible // 
-
-    // Wait for the Checkout button to be visible and enabled
     const checkoutButton = page.locator("li.totalRow button[type='button']");
     await expect(checkoutButton).toBeVisible();
     await expect(checkoutButton).toBeEnabled();
-
-    // Click the Checkout button
     await checkoutButton.click();
 
-    console.log('Checkout button clicked successfully!');
-    // Payment page validation //
-
+    // Validate navigation to checkout/payment page
+    await expect(page).toHaveURL(/checkout|order/i);
 });
-test.only('Playwright special locator test', async ({ page }) => {
+
+
+test('Playwright special locator test', async ({ page }) => {
 
     await page.goto("https://rahulshettyacademy.com/angularpractice/");
-    await page.locator('form input[name="name"]').fill("Dibyendu Mondal");
-    await page.locator("input[name='email']").fill("dibyendumondal87@gmail.com");
-    await page.locator("#exampleInputPassword1").fill("Rss@2020");
+    await page.getByPlaceholder('Name').fill("Dibyendu Mondal");
+    await page.getByPlaceholder('Email').fill(CLIENT_EMAIL);
+    await page.getByLabel('Password').fill(CLIENT_PASSWORD);
     await page.getByLabel('Gender').selectOption('Male');
     await page.getByLabel('Employed').check();
-    await page.locator("//input[@name='bday']").fill("1990-10-10");
+    await page.locator("input[name='bday']").fill("1990-10-10");
     await page.getByRole('button', { name: 'Submit' }).click();
+
+    // Validate success message is shown after form submission
+    await expect(page.getByText('Success')).toBeVisible();
 });
-
-
-
-
-
-
-

@@ -1,73 +1,67 @@
 const { test, expect } = require('@playwright/test');
 
-test('Validate if text is present on the Practice page', async ({ browser }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    await page.goto("https://rahulshettyacademy.com/practice-project");
-    await page.locator('#name').fill("Dibyendu Mondal");
-    await page.locator('#email').fill("dibyendumondal87@gmail.com");
-    await page.locator('#form-submit').click();
-    console.log = (await page.locator('.section-title.h1'));
-    const actualText = await page.locator('.section-title.h1').textContent();
-    await expect(actualText).toContain('OUR PROJECTS');
+// Credentials sourced from environment variables
+const OPENCART_EMAIL    = process.env.OPENCART_EMAIL    || "dib@gmail.com";
+const OPENCART_PASSWORD = process.env.OPENCART_PASSWORD || "Rss@2020";
+const CLIENT_EMAIL      = process.env.CLIENT_EMAIL      || "dibyendumondal87@gmail.com";
 
+
+test('Validate section title after form submit', async ({ page }) => {
+
+    await page.goto("https://rahulshettyacademy.com/practice-project");
+    await page.getByPlaceholder('Name').fill("Dibyendu Mondal");
+    await page.getByPlaceholder('Email').fill(CLIENT_EMAIL);
+    await page.getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page.locator('.section-title.h1')).toContainText('OUR PROJECTS');
 });
-test('page playwright test', async ({ page }) => {
+
+
+test('Validate Google page title', async ({ page }) => {
 
     await page.goto("https://google.com");
-
-    console.log = (await page.title());
-    await expect(page).toHaveTitle("Google")
-
+    await expect(page).toHaveTitle("Google");
 });
 
-test('Validate Negative Scenario  present on the Practice page', async ({ browser }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
+
+test('Validate email field required message on empty submit', async ({ page }) => {
+
     await page.goto("https://rahulshettyacademy.com/practice-project");
-    await page.locator('#name').fill("Dibyendu Mondal");
-    // await page.locator('#email').fill("dibyendumondal87@gmail.com");
-    await page.locator('#form-submit').click();
-    const emailInput = await page.locator('#email');
+    await page.getByPlaceholder('Name').fill("Dibyendu Mondal");
+    await page.getByRole('button', { name: 'Submit' }).click();
+
+    const emailInput      = page.getByPlaceholder('Email');
     const emailValidation = await emailInput.evaluate(el => el.validationMessage);
-    console.log(`Email Field Validation Message: ${emailValidation}`);
     expect(emailValidation).toBe("Please fill out this field.");
-
 });
 
-test.only('Validate New Tab Window', async ({ browser }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
+
+test('Validate new tab opens with correct content', async ({ page, context }) => {
+
     await page.goto("https://rahulshettyacademy.com/");
-    const documentLink = page.locator('.header-top-link');
 
-    const [newpage] = await Promise.all([
-
+    const [newPage] = await Promise.all([
         context.waitForEvent('page'),
-        documentLink.click(),
-    ]
+        // TODO: Replace with getByRole('link') once the link label is confirmed
+        page.locator('.header-top-link').click(),
+    ]);
 
-    )
+    await newPage.waitForLoadState();
 
-
-
-    const text = await newpage.locator('#hero_section > div > div.hero_first_div > p.hero_heading').textContent();
-    console.log(text);
-
-
+    await expect(newPage.locator('p.hero_heading')).toContainText(/.+/);
 });
 
-test('Validate multiple element', async ({ page }) => {
+
+test('Validate camera listing loads after login', async ({ page }) => {
 
     await page.goto("https://naveenautomationlabs.com/opencart/index.php?route=account/login");
-    await page.locator('#input-email').fill("dib@gmail.com");
-    await page.locator('#input-password').fill("Rss@2020");
-    // await page.locator('#email').fill("dibyendumondal87@gmail.com");
-    await page.locator('[value="Login"]').click();
-    await page.locator('li:nth-child(7) a:nth-child(1)').click();
-    await page.waitForLoadState('networkidle');
-    const allMobiles = await page.locator('.caption h4 a').allTextContents();
-    console.log(allMobiles);
+    await page.locator('#input-email').fill(OPENCART_EMAIL);
+    await page.locator('#input-password').fill(OPENCART_PASSWORD);
+    await page.getByRole('button', { name: 'Login' }).click();
+
+    await page.getByRole('link', { name: 'Cameras' }).click();
+    await expect(page.locator('.caption h4 a').first()).toBeVisible();
+
+    const allCameras = await page.locator('.caption h4 a').allTextContents();
+    expect(allCameras.length).toBeGreaterThan(0);
 });
-
-
