@@ -67,16 +67,10 @@ test('End to End', async ({ page }) => {
         console.log(`❌ Total price is incorrect. Expected: $${expectedTotalPrice}, Displayed: $${displayedTotalPrice}`);
     }
 
-
-
-
-
-
-
 });
 
 
-test.only('Regression Test', async ({ page }) => {
+test('Regression Test', async ({ page }) => {
 
     await page.goto("https://rahulshettyacademy.com/client");
     await page.locator('#userEmail').fill("dibyendumondal87@gmail.com");
@@ -122,13 +116,17 @@ test.only('Regression Test', async ({ page }) => {
     console.log('Checkout button clicked successfully!');
     // Payment page validation //
 
+});
+test.only('Playwright special locator test', async ({ page }) => {
 
-
-
-
-
-
-
+    await page.goto("https://rahulshettyacademy.com/angularpractice/");
+    await page.locator('form input[name="name"]').fill("Dibyendu Mondal");
+    await page.locator("input[name='email']").fill("dibyendumondal87@gmail.com");
+    await page.locator("#exampleInputPassword1").fill("Rss@2020");
+    await page.getByLabel('Gender').selectOption('Male');
+    await page.getByLabel('Employed').check();
+    await page.locator("//input[@name='bday']").fill("1990-10-10");
+    await page.getByRole('button', { name: 'Submit' }).click();
 });
 
 
