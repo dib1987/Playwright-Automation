@@ -1,70 +1,59 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Repository Purpose
-This repository is used for Playwright-based UI automation testing.
+Playwright-based UI automation test suite targeting practice/demo sites (rahulshettyacademy.com, naveenautomationlabs.com/opencart).
 
-Primary goals:
-- reliable UI automation
-- readable test code
-- maintainable selectors
-- minimal flaky behavior
-- clear debugging and validation
-
-## Architecture Snapshot
-- Framework: Playwright
-- Language: JavaScript
-- Test folder: `tests/`
-- Example test folder: `tests-examples/`
-- Config file: `playwright.config.js`
-- Dependency management: `package.json`
-
-## Canonical Commands
-- Install dependencies: `npm install`
+## Commands
+- Install: `npm install`
 - Run all tests: `npx playwright test`
-- Run one test file: `npx playwright test tests/<file-name>`
-- Run headed mode: `npx playwright test --headed`
-- Run debug mode: `npx playwright test --debug`
-- Show HTML report: `npx playwright show-report`
+- Run one file: `npx playwright test tests/<file-name>`
+- Run headed: `npx playwright test --headed`
+- Run debug: `npx playwright test --debug`
+- Run single test by name: `npx playwright test -g "test name"`
+- View report: `npx playwright show-report`
 
-## Execution Workflow
-For any non-trivial task:
-1. Understand the test requirement clearly
-2. Inspect existing Playwright test style first
-3. Make the smallest safe change
-4. Prefer stable locators and clear assertions
-5. Validate using the smallest relevant test run
-6. Report summary, validation, and risk
+## Config Defaults (playwright.config.js)
+- Browser: Chromium only (headless: false, screenshot: on, trace on-first-retry)
+- No parallelism, no retries configured
+- Reporter: HTML
 
-## Coding Principles
-- Follow existing Playwright patterns first
-- Prefer readable code over clever code
-- Avoid touching unrelated files
-- Keep test logic simple and maintainable
-- Prefer stable selectors over brittle selectors
-- Avoid hardcoded waits
+## Test Architecture
+All tests are in `tests/` as CommonJS `.spec.js` files using `require('@playwright/test')`.
 
-## Testing Rules
-- Every test change should consider regression impact
-- Bug fixes should include regression coverage when practical
-- Do not ignore failing tests without explanation
-- Always state what was tested and what was not tested
+**Test files and what they cover:**
+- `EndtoEnd.spec.js` — login → add to cart → checkout flows (OpenCart, rahulshetty client app, form submit)
+- `UIBasic.spec.js` — page title, form validation, new tab handling, camera listing after login
+- `VerifyAlertPopUp.spec.js` — `page.on('dialog')` handler pattern for browser alerts
+- `VerifyMouseHover.spec.js` — hover interaction with `.mouse-hover-content` menu
+- `VerifyElementDiaplayHidden.spec.js` — show/hide element visibility (missing `expect` assertions — known gap)
 
-## Safety Rules
-- Never expose credentials, tokens, or secrets
-- Never remove assertions just to make tests pass
-- Never use unnecessary waits to hide timing issues
-- Ask before destructive or risky changes
+## Credentials Pattern
+Tests read credentials from env vars with hardcoded fallbacks:
+```js
+const EMAIL = process.env.OPENCART_EMAIL || "dib@gmail.com";
+```
+New tests must follow this pattern — env var first, fallback only for local dev.
+
+## Locator Priority
+Follow this order (from `.claude/rules/ui.md`):
+1. `getByRole()` — preferred
+2. `getByLabel()`, `getByPlaceholder()`, `getByText()`
+3. CSS selectors (stable ones like `#input-email`)
+4. XPath — last resort only
+
+## Known Anti-Patterns to Avoid
+- `isVisible()` / `isHidden()` without `await expect()` — these are queries, not assertions (see `VerifyElementDiaplayHidden.spec.js`)
+- `page.click()` shorthand — prefer `page.locator(...).click()` for clarity
+- `console.log` left in finished tests
+
+## Modular Rules
+- `.claude/rules/testing.md` — test validation rules
+- `.claude/rules/ui.md` — locator strategy, waiting, assertions
+- `.claude/rules/api.md` — API test rules (if extended)
+- `.claude/rules/git.md` — commit hygiene
+- `.claude/rules/security.md` — credential handling
 
 ## Output Contract
-Always provide:
-1. Summary of changes
-2. Files modified
-3. Tests executed
-4. Risks, assumptions, or gaps
-
-## Modular Guidance
-See:
-- `.claude/rules/testing.md`
-- `.claude/rules/ui.md`
-- `.claude/rules/git.md`
-- `.claude/rules/security.md`
+Always provide: summary of changes, files modified, tests executed, and any risks or gaps.
